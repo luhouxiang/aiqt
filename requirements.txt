@@ -1,0 +1,9 @@
+pymysql
+logbook
+apscheduler==3.9
+sqlalchemy==1.4.43
+requests
+redis
+pytest
+pandas==1.5.3
+numpy

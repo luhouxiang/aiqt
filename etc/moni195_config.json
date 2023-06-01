@@ -1,0 +1,17 @@
+{
+    "dest_type": "fenshi_jx_sx",
+    "dest_wx_send": 0,
+    "dest_bk_type说明":"ma5_activate, dd_activate, dd_activate003, 默认ma5",
+    "dest_bk_type":"ma5_activate",
+    "dest_inc_dec_type说明":"加仓类型，默认Normal表示普通,None表示无",
+    "无dest_inc_dec_type":"Normal",
+    "dest_dec_type说明":"减仓时机,one_once,one_minute，默认one_once即白盘减一次，夜盘减一次，one_minute即每分钟查看一下是否有减仓的可能性",
+    "dest_dec_type":"one_once",
+    "dest_inc_limits说明":"限制加仓，默认为0，不为0则进行限制，限制规则：如果对应板块的2小时顶底与持仓不符，不能加仓",
+    "abc_dest_inc_limits":0,
+    "dest_play_back":0,
+    "dest_multi_cycle_flag说明":"默认为0表示单周期，否则表示多周期",
+    "dest_multi_cycle_flag":1,
+    "dest_codes":["au","guijinshu","wenhuashangpin"],
+    "##dest_codes":["SR","ruanshangbankuai","wenhuashangpin"]
+}
