@@ -5,19 +5,13 @@
 @time: 2023/5/31 21:27
 @desc:
 """
-# -*- coding: utf-8 -*-
-"""
-@author: luhx
-@file: strategy_imp.py
-@time: 2023/5/24 10:11
-@desc: 策略具体实现
-"""
+
 import string
 from base.kbase import kBase
 from base.baseobj import KLine, TimeProp, Contract
 from kds_util.user_logbook import init_logger as init_logs, user_log as logger
 from highlow import algo
-from datetime import datetime
+from datetime import datetime, timedelta
 # from highlow import store
 # from highlow.dd_bkinfo import DdBkInfo
 from highlow.dd_bs import DdBs
@@ -163,29 +157,6 @@ class StrategyImp(kBase):
         #     self.bs.trader.opt_clear_position(hold_item, self.mysql)
         pass
 
-    # def run_strategy(self):
-    #     self.bs.activate_bk_ma5_status(self.Params)  # 激活板块ma5状态
-    #     self.bs.dd_account.update_account_status(self.bs.dd_account.contract_opt_positions)  # 更新账户资金及持仓信息
-    #     if Envs.dest_play_back and Envs.dest_clear_position_time:
-    #         if self.dt >= datetime.strptime(Envs.dest_clear_position_time, "%Y-%m-%d %H:%M:%S"):
-    #             self.clear_all_position()
-    #             return
-    #     bk_items: Dict[TBkId, BkItem] = self.bs.bk_info.bk_items
-    #     holds = self.bs.dd_account.get_holds()
-    #     for bk_code in bk_items.keys():
-    #         bk_item: BkItem = bk_items[bk_code]
-    #         if bk_item.signal_breed + "L6" not in self.Params:
-    #             continue
-    #         if bk_item.signal_breed and self.Params[bk_item.signal_breed + "L6"].dd_side != 0:  # 有顶底信号的处理
-    #             self.bs.deal_has_signal_strategy(bk_item, holds)
-    #         else:  # 无顶底信号的处理
-    #             self.bs.deal_no_signal_strategy(bk_item, holds)
-    #     # if not Envs.dest_play_back:
-    #     self.bs.deal_force_stop_loss()  # 强制止损
-    #     self.bs.deal_force_stop_win()  # 止赢
-    #     self.bs.run_wave_strategy(self.Params)  # 下午2点50分进行当天大波动计算
-    #     self.bs.moving_position(self.Params)
-
     def run_day_kline(self, m: Contract):  # 每个日线串行回调
         if m.klines1d.id >= len(m.klines1d.klines):
             logger.warn(f"{m.codeL}.{m.code}: m.klines1d.id:{m.klines1d.id} >= m.klines1d.id({len(m.klines1d.klines)})")
@@ -204,22 +175,22 @@ class StrategyImp(kBase):
 
     def run_day_kline2(self):
         # 日线跑完，全部回调  {筛票阶段}
-        # if self.bs.check_prev_trading_day_end():
-        #     if self.bs.check_cur_trading_day_end():  # 如果当前交易日也走完了，直接退出
-        #         logger.warn(f"cur_trading_day_is_over. cur_trade_day: {Envs.cur_trade_day}")
-        #         if Envs.dest_play_back:
-        #             new_trading_day = algo.get_next_trading_day(self.bs.bk_info.pd_days, Envs.cur_trade_day)
-        #             new_dt = datetime.strptime(str(new_trading_day), "%Y%m%d")
-        #             new_dt += timedelta(hours=16)
-        #             new_date_time = new_dt.strftime("%Y-%m-%d %H:%M:%S")
-        #             algo.init_trade_day(self.bs.bk_info.pd_days, spec_time=new_date_time)
-        #             self.init_daily_level_data()  # 重新初始化日线级数据
-        #             self.init_cycle_level_data()
-        #         else:
-        #             pass
-        #     else:
-        #         self.init_daily_level_data()
-        #         self.init_cycle_level_data()
+        if self.bs.check_prev_trading_day_end():
+            if not self.bs.check_cur_trading_day_end():  # 如果当前交易日没走完，进行初始化
+                self.init_daily_level_data()
+                self.init_cycle_level_data()
+            else:   # 走完的话，打印告警信息
+                logger.warn(f"cur_trading_day_is_over. cur_trade_day: {Envs.cur_trade_day}")
+                if Envs.dest_play_back: # 回放的话，重新设置下一个交易日
+                    new_trading_day = algo.get_next_trading_day(self.bs.bk_info.pd_days, Envs.cur_trade_day)
+                    new_dt = datetime.strptime(str(new_trading_day), "%Y%m%d")
+                    new_dt += timedelta(hours=16)
+                    new_date_time = new_dt.strftime("%Y-%m-%d %H:%M:%S")
+                    algo.init_trade_day(self.bs.bk_info.pd_days, spec_time=new_date_time)
+                    self.init_daily_level_data()  # 重新初始化日线级数据
+                    self.init_cycle_level_data()
+                else:
+                    pass
         return
 
     def init_daily_level_data(self):
@@ -360,18 +331,19 @@ class StrategyImp(kBase):
         return
 
     def run_minute_kline2(self):  # 每分钟跑完，回调，计算票和票、票和板块之间关系阶段，修正个票信号
-        # if not self.bs.prev_day_end:
-        #     return
+        k = self.Params["wenhuashangpin"].contract_info.Last_minute_Kline
+        logger.info(f"wenhuashangpin_dt:{k.trade_time}, sys_dt:{self.trade_time}")
+        if not self.bs.prev_day_end:
+            return
         # if self.whole_n_minute():
         #     self.init_cycle_level_data()  # 更新周期信息
-        #
-        # self.bs.dd_account.calc_contract_opt_profit()
+
+        self.bs.dd_account.calc_contract_opt_profit()
 
         if self.is_same_white_or_night():  # 系统和K线同是白盘或同是夜盘
             self.manage_positions()     # 管理持仓
             # self.run_strategy()
             self.execute_signal_trades()    # 无持仓的执行信号开仓操作
-        k = self.Params["wenhuashangpin"].contract_info.Last_minute_Kline
-        # logger.info(f"wenhuashangpin_dt:{k.trade_time}, sys_dt:{self.trade_time}")
+
         self.reset_night_trading_status()
         self.reset_hq_status()  # 将每个品种的行情重新置为不可用

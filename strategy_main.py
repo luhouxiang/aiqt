@@ -11,7 +11,7 @@ import traceback
 from highlow.envs import Envs
 from highlow import envs
 from highlow import helper, algo
-from strategy_imp import StrategyImp
+from highlow.strategy_imp import StrategyImp
 from kds_util.user_logbook import init_logger as init_logs, user_log as logger
 
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
             trading_days = algo.init_trade_day(pdays, "")
             start_time = ""
             end_time = ""
-        main_kbase(n_days=120, n_minute_days=2, stime=start_time,
+        main_kbase(n_days=120, n_minute_days=3, stime=start_time,
                    etime=end_time, codes=Envs.dest_codes)
 
     except Exception as ex:

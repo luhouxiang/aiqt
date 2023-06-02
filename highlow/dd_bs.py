@@ -31,6 +31,21 @@ class DdBs:
         # self.signal_mgr = SignalSource(acc, acc.data_center_ip)
         Envs.dest_ip = self.ip
 
+    def check_prev_trading_day_end(self):
+        """
+        判断前一个交易日已经完成
+        """
+        if self.prev_day_end:
+            return self.prev_day_end
+
+        dt = self.params["wenhuashangpin"].contract_info.Last_Day_Kline.dt
+
+        # if Envs.cur_trade_day == algo.get_kline_trading_day(self.bs.bk_info.pd_days, dt):  # 到达指定交易日，退出
+        #     return
+        if Envs.prev_trade_day == algo.get_kline_trading_day(self.bk_info.pd_days, dt):
+            self.prev_day_end = True
+        return self.prev_day_end
+
     def check_cur_trading_day_end(self):
         """
         判断当前的交易日已经完成

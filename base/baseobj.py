@@ -15,7 +15,7 @@ from pymysql.cursors import DictCursor
 import string
 import json
 import redis
-from kds_util.user_logbook import user_log as logger
+from kds_util.user_logbook import system_log as logger
 
 from base.cfg import cfg
 

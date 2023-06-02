@@ -24,10 +24,14 @@ from base.cfg import cfg
 from base.baseobj import Contract, Order, Accont, Hold, loadklines, KLine
 
 
-def sign(a): return 0 if not a else 1 if a > 0 else -1
+def get_sign(a):
+    """返回给定参数的符号，它接受一个参数a，如果a为0，则返回0，如果a为正数，则返回1，如果a为负数，则返回-1"""
+    return 0 if not a else 1 if a > 0 else -1
 
 
-def avlist(l): return (sum(l) / len(l)) if l else 0
+def get_average(arr):
+    """ 计算给定数字列表的平均值。如果列表为空，则返回0"""
+    return (sum(arr) / len(arr)) if arr else 0
 
 
 def GetBkTable() -> Tuple[Dict[str, str]]:
@@ -35,7 +39,7 @@ def GetBkTable() -> Tuple[Dict[str, str]]:
                          cursorclass=pymysql.cursors.DictCursor)
     cursor = db.cursor()
     cursor.execute(
-        "SELECT BkCode,BkName,ContractWeightCode,ContractWeightName,BkType,Filter FROM  tbl_component_bk")  # where `Filter`='要'
+        "SELECT BkCode,BkName,ContractWeightCode,ContractWeightName,BkType,Filter FROM  tbl_component_bk where market=0")  # where `Filter`='要'
     result: Tuple[Dict[str, Dict[str, str]]] = cursor.fetchall()
     db.close()
     return result
@@ -432,7 +436,7 @@ if __name__ == '__main__':
             p.volume = 0
             p.datr5 = (k.high - k.low + p.datr5 * 2) / 3 if p.datr5 else k.high - k.low  # 5日波幅
             p.score = p.datr5 / k.close / m.MarginRatioByMoney if m.MarginRatioByMoney else 0
-            p.dma5 = avlist([x.close for x in m.klines1d.last_n_klines(5)])  # 5日均
+            p.dma5 = get_average([x.close for x in m.klines1d.last_n_klines(5)])  # 5日均
             p.ddir = 1 if k.close > p.dma5 else -1
             p.Select = 0
             p.dir = 0
