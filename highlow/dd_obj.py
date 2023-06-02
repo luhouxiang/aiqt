@@ -5,7 +5,98 @@
 @time: 2023/5/31 21:52
 @desc:
 """
+from enum import Enum
+from typing import Dict, TypeVar, List, Optional, NewType
+
 from base.baseobj import KLine, Contract
+from dataclasses import dataclass, field
+
+TBreed = TypeVar('TBreed', bound=str)  # 定义TBreed类型
+TBkId = TypeVar('TBkId', bound=str)  # 定义TBkId
+TCodeL6 = TypeVar('TCodeL6', bound=str)
+TContract = NewType('TContract', str)  # 定义合约类型
+
+
+class ESignalType(Enum):
+    NoSignal = 'NoSignal'  # 没有信号
+    DdSignal = 'DdSignal'  # 顶底信号
+
+@dataclass
+class HoldItem:
+    contract: TContract = TContract("")
+    long_position: int = 0  # 多头持仓
+    short_position: int = 0  # 空头持仓
+    long_open_amount: float = 0.0
+    long_close_amount: float = 0.0
+    short_open_amount: float = 0.0
+    short_close_amount: float = 0.0
+    last_price: float = 0.0
+    long_open_position: int = 0  # 多头开仓数
+    short_open_position: int = 0  # 空头开仓数
+    long_profit: float = 0.0
+    short_profit: float = 0.0
+    long_today_profit: float = 0.0  # 多头当日盈亏
+    short_today_profit: float = 0.0  # 空头当日盈亏
+    trade_day: int = 0
+
+    @property
+    def net_position(self):
+        return self.long_position + self.short_position
+
+    @property
+    def long_cost(self):
+        if self.long_position == 0:
+            return 0
+        else:
+            return (self.long_open_amount - self.long_close_amount) / abs(self.long_position)
+
+    @property
+    def short_cost(self):
+        if self.short_position == 0:
+            return 0
+        else:
+            return (self.short_open_amount - self.short_close_amount) / abs(self.short_position)
+
+
+@dataclass
+class BreedItem:
+    dd_forward_5_day_zdf: float = 0.0  # 顶底为界向前5天的涨跌幅度
+    sort_by_logo: bool = True  # 参与排序的标识，默认有效，当无效时，不参与排序
+    breed_side: int = 0
+    born_type: str = ""  # 产生方式：信号 或 持仓
+    breed_id: str = ""
+
+
+@dataclass
+class BkItem:
+    signal_breed: str = ""  # 最终排序出来确定的有信号的来代表板块的指数breed
+    components: Dict[str, BreedItem] = None  # type: ignore
+    trade_type: str = ""  # 交易类型， OpenOptPosition，CloseOptPosition，IncreasePosition，ReducePosition，临时清仓， （前四种任意一种发生，不再执行另外的仓位处理）
+    bk_code: str = ""
+    delegate_from_signal: str = ""
+
+    def __post_init__(self):
+        self.components = {}
+
+# class OpenOptInfo:
+#     """
+#     开仓项的集合
+#     """
+#     def __init__(self):
+#         self.opens: Dict[str, OpenOptItem] = {}
+
+
+def create_new_breed_item(breed: TBreed, breed_side: int, born_type: str = "hold_only"):
+    item = BreedItem(breed_side=breed_side, breed_id=breed, born_type=born_type)
+    return item
+
+
+def create_new_bk_item(bk_items, bk_code, born_type="hold_only"):
+    bk_items[bk_code] = BkItem()
+    bk_items[bk_code].bk_code = bk_code
+    bk_items[bk_code].delegate_from_signal = born_type
+    return bk_items[bk_code]
+
 class DDParam:
     def __init__(self, contract) -> None:
         self.score = 0.0

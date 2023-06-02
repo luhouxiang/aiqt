@@ -20,13 +20,13 @@ from highlow import algo
 from datetime import datetime
 # from highlow import store
 # from highlow.dd_bkinfo import DdBkInfo
-# from highlow.dd_bs import DdBs
+from highlow.dd_bs import DdBs
 # from highlow.dd_bkinfo import DDParam
 # from highlow.dd_obj import BkItem, TBkId, ESignalType
 from highlow.envs import Envs
 from highlow.dd_obj import DDParam
-# from highlow import envs
-# from typing import Dict
+from highlow import envs
+from typing import Dict
 # from util import helper
 # from highlow.database_opt import create_strategy_high_low_table
 # from base.BaseCD import MA
@@ -40,17 +40,17 @@ class StrategyImp(kBase):
     def __init__(self, investor_id: str, days=100, mindays=7, stime="", etime="", codes=[]):
         logger.info("系统正在数据初始化，请稍后...")
         super().__init__(investor_id, days, mindays, stime, etime, codes, playback=Envs.dest_play_back)
-        # bs = DdBs(self)
+        bs = DdBs(self)
         logger.info("系统初始化完成.")
         Envs.data_center_ip = self.data_center_ip
 
         self.Params: dict[str, DDParam] = {}
-        # self.bs: DdBs = bs
-        # self.mysql = bs.mysql
+        self.bs: DdBs = bs
+        self.mysql = bs.mysql
         # create_strategy_high_low_table(bs.mysql)
-        # self.bs.dd_account.params = self.bs.params = self.bs.bk_info.params = self.bs.trader.params = self.Params
-        # for key in self.allContract:
-        #     self.Params[key] = DDParam(self.allContract[key])
+        self.bs.dd_account.params = self.bs.params = self.bs.bk_info.params = self.bs.trader.params = self.Params
+        for key in self.allContract:
+            self.Params[key] = DDParam(self.allContract[key])
         # for key in self.Breed2Symbol.keys():
         #     l6 = key + "L6"
         # self.is_inited = True
@@ -190,12 +190,12 @@ class StrategyImp(kBase):
         if m.klines1d.id >= len(m.klines1d.klines):
             logger.warn(f"{m.codeL}.{m.code}: m.klines1d.id:{m.klines1d.id} >= m.klines1d.id({len(m.klines1d.klines)})")
             return
-        # if self.bs.check_cur_trading_day_end():  # 如果当前交易日也走完了，直接退出
-        #     # logger.warn(f"cur_trading_day_is_over. cur_trade_day: {Envs.cur_trade_day}")
-        #     if Envs.dest_play_back:
-        #         pass
-        #     else:
-        #         return
+        if self.bs.check_cur_trading_day_end():  # 如果当前交易日也走完了，直接退出
+            # logger.warn(f"cur_trading_day_is_over. cur_trade_day: {Envs.cur_trade_day}")
+            if Envs.dest_play_back:
+                pass
+            else:
+                return
         k = m.klines1d.klines[m.klines1d.id]
         p: DDParam = self.Params[m.codeL]
         p.minute1_kline = k
